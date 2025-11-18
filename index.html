@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Healthcare Portal - Doctor Appointment & Medicine Store</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    /* --- CSS Variables & Base Styles --- */
+    :root {
+      --primary: #2c3e50;
+      --secondary: #16a085;
+      --background: #f8f9fa;
+      --accent: #2980b9;
+      --card-bg: #fff;
+      --danger: #e74c3c;
+      --success: #27ae60;
+      --radius: 10px;
+      --shadow: 0 2px 12px rgba(44,62,80,.08);
+      --transition: 0.2s cubic-bezier(.4,.7,.2,1);
+      --font: 'Segoe UI', 'Roboto', 'Arial', sans-serif;
+    }
+    body { font-family: var(--font); background: var(--background); margin:0;padding:0; color:var(--primary);}
+    header { background: var(--primary); color: #fff; padding: 18px 0; box-shadow: var(--shadow); display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100;}
+    .navbar { display:flex; align-items:center; gap:24px; margin-left:32px;}
+    .nav-link { color:#fff; text-decoration:none; padding:7px 13px; border-radius: 8px; font-weight:500; transition: background var(--transition);}
+    .nav-link.active,.nav-link:hover { background:var(--secondary);}
+    .logo { font-size:1.7em; font-weight:bold; margin-left:32px; letter-spacing:1px; display:flex; align-items:center; gap:10px;}
+    .user-greeting { margin-right:32px; font-size:1em; display:inline-block; color:#fff; background:var(--secondary); padding:5px 12px; border-radius:8px;}
+    main { min-height:70vh; width:100%; max-width:950px; margin:36px auto 0 auto; padding:0;}
+    .tab-content { display:none; }
+    .tab-content.active { display:block; animation:fadeIn .5s; }
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+    /* --- Home Hero Section --- */
+    .home-hero {
+      position: relative;
+      width: 100%;
+      height: 60vh;
+      background: url('https://images.unsplash.com/photo-1588776814546-7c232d2d0d1d?auto=format&fit=crop&w=1470&q=80') no-repeat center center/cover;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius);
+      margin-bottom: 30px;
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+    .hero-text {
+      background: rgba(44, 62, 80, 0.6);
+      color: #fff;
+      padding: 20px 30px;
+      border-radius: var(--radius);
+      max-width: 90%;
+    }
+    .hero-text h1 { margin-bottom: 12px; font-size: 2em; }
+    .hero-text p { font-size: 1.1em; }
+
+    /* --- Cards & Images --- */
+    .card-group { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:22px; margin-bottom:26px;}
+    .card { background:var(--card-bg); border-radius:var(--radius); box-shadow:var(--shadow); padding:24px 20px; transition: transform var(--transition); position:relative; display:flex; flex-direction:column; gap:8px;}
+    .card:hover { transform: translateY(-3px) scale(1.025); }
+    .dep-tag { display:inline-block; background:var(--secondary); color:#fff; font-size:0.94em; padding:2.5px 11px; border-radius:7px; margin-right:8px; margin-bottom:6px; font-weight:bold;}
+    .fee-label { font-size:1.05em; color:var(--primary);}
+    .book-btn, .resched-btn, .checkout-btn { background:var(--secondary); color:#fff; border:none; border-radius:8px; font-weight:500; padding:9px 20px; font-size:1em; margin-top:7px; cursor:pointer; transition: background var(--transition); box-shadow: var(--shadow);}
+    .book-btn:hover,.resched-btn:hover,.checkout-btn:hover { background:var(--accent);}
+    .disabled, .book-btn:disabled { opacity:.48; pointer-events:none;}
+    .doctor-image, .medicine-image {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      border-radius: var(--radius);
+      margin-bottom: 10px;
+    }
+
+    /* --- Modal & Toast --- */
+    .modal-bg { position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(44,62,80,.18); display:flex; align-items:center; justify-content:center; z-index:900; animation:fadeInBg .27s;}
+    @keyframes fadeInBg { from{opacity:0} to{opacity:1} }
+    .modal { background:var(--card-bg); border-radius:var(--radius); padding:30px 27px; box-shadow: var(--shadow); max-width:430px; width:92vw; min-height:120px; color:var(--primary); animation:fadeInModal .38s;}
+    @keyframes fadeInModal { from{transform:scale(.7);opacity:0} to{transform:scale(1);opacity:1} }
+    .toast { position:fixed; right:25px; bottom:33px; background:var(--accent); color:#fff; border-radius:9px; font-size:1.13em; padding:14px 29px 14px 25px; box-shadow:var(--shadow); opacity:0.95; z-index:910; animation:swipeToast .34s;}
+    @keyframes swipeToast {from{transform:translateY(50px)} to{transform:translateY(0)}}
+
+    /* --- Responsive --- */
+    @media (max-width:710px) { header, .logo, .user-greeting {margin-left:10px;margin-right:10px;} main {margin:22px auto 0 auto; padding:7px;} .card-group {grid-template-columns:repeat(auto-fit,minmax(220px,1fr));} .home-hero {height:40vh;} }
+    @media (max-width:490px){ .logo{font-size:1.1em;} main{padding:3px;} }
+  </style>
+</head>
+<body>
+  <header>
+    <span class="logo">🩺 Healthcare Portal</span>
+    <nav class="navbar" id="navbar"></nav>
+    <span class="user-greeting" id="userGreeting"></span>
+  </header>
+  <main>
+    <!-- Home Page -->
+    <section id="tab-home" class="tab-content active">
+      <div class="home-hero">
+        <div class="hero-text">
+          <h1>Welcome to Healthcare Portal</h1>
+          <p>Your health, our priority. Book appointments and order medicines online.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Book Appointment -->
+    <section id="tab-book" class="tab-content">
+      <h2>Book Appointment</h2>
+      <div class="card-group" id="doctorList"></div>
+    </section>
+
+    <!-- Appointments -->
+    <section id="tab-appointments" class="tab-content">
+      <h2>Your Appointments</h2>
+      <div id="appointmentsList"></div>
+    </section>
+
+    <!-- Medicines -->
+    <section id="tab-medicines" class="tab-content">
+      <h2>Medicine Store</h2>
+      <input type="text" id="medicineSearch" placeholder="Search medicines..." style="margin-bottom:12px;padding:8px;border-radius:6px;border:1px solid #bac4ce;width:100%;">
+      <div class="card-group" id="medicineList"></div>
+      <button class="checkout-btn" id="checkoutCart">Checkout Cart</button>
+    </section>
+
+    <!-- Account -->
+    <section id="tab-account" class="tab-content">
+      <h2>Account</h2>
+      <div id="accountInfo"></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    Healthcare Portal © 2025 | Contact: support@examplehealth.com 
+  </footer>
+
+  <div id="modalArea"></div>
+  <div id="toastArea"></div>
+
+  <script>
+    // --- Data with Images ---
+    const doctors = [
+      {id:1,name:'Dr. Rohan Mehta',department:'Cardiology',fee:1200,image:"image1.webp"},
+      {id:2,name:'Dr. Anita Singh',department:'Dermatology',fee:900,image:"image2.webp"},
+      {id:3,name:'Dr. Karan Patel',department:'Orthopedics',fee:1000,image:"image3.webp"}
+    ];
+    const medicines = [
+      {id:1,name:'Paracetamol',price:50,image:"image4.webp"},
+      {id:2,name:'Ibuprofen',price:80,image:"image5.webp"},
+      {id:3,name:'Vitamin C',price:120,image:"image6.webp"},
+      {id:4,name:'Cough Syrup',price:150,image:"image7.webp"}
+    ];
+
+    // --- Navigation ---
+    const navItems = [
+      {name:'Home',id:'tab-home'},
+      {name:'Book Appointment',id:'tab-book'},
+      {name:'Appointments',id:'tab-appointments'},
+      {name:'Medicines',id:'tab-medicines'},
+      {name:'Account',id:'tab-account'}
+    ];
+    const navbar = document.getElementById('navbar');
+    navItems.forEach(item => {
+      const a = document.createElement('a');
+      a.className='nav-link';
+      a.href='#';
+      a.dataset.target = item.id;
+      a.textContent = item.name;
+      if(item.id==='tab-home') a.classList.add('active');
+      navbar.appendChild(a);
+    });
+    const navLinks = document.querySelectorAll('.nav-link');
+    const tabs = document.querySelectorAll('.tab-content');
+    navLinks.forEach(link=>{
+      link.addEventListener('click',()=>{
+        tabs.forEach(t=>t.classList.remove('active'));
+        document.getElementById(link.dataset.target).classList.add('active');
+        navLinks.forEach(l=>l.classList.remove('active'));
+        link.classList.add('active');
+      });
+    });
+
+    // --- User Greeting ---
+    let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
+    const userGreeting = document.getElementById('userGreeting');
+    function updateGreeting(){
+      if(currentUser){ userGreeting.textContent = `Hello, ${currentUser}`; }
+      else{ userGreeting.textContent = `Guest`; }
+    }
+    updateGreeting();
+
+    // --- Doctor Listing ---
+    const doctorList = document.getElementById('doctorList');
+    function renderDoctors(){
+      doctorList.innerHTML='';
+      doctors.forEach(doc=>{
+        const card = document.createElement('div');
+        card.className='card';
+        card.innerHTML=`
+          <img src="${doc.image}" alt="${doc.name}" class="doctor-image">
+          <h3>${doc.name}</h3>
+          <span class="dep-tag">${doc.department}</span>
+          <p class="fee-label">Fee: ₹${doc.fee}</p>
+          <button class="book-btn" onclick="bookDoctor(${doc.id})">Book Appointment</button>
+        `;
+        doctorList.appendChild(card);
+      });
+    }
+    renderDoctors();
+
+    // --- Booking ---
+    function bookDoctor(docId){
+      if(!currentUser){ showModal('Login Required','Please login to book appointment'); return; }
+      const doc = doctors.find(d=>d.id===docId);
+      const appt = {id:Date.now(),doctor:doc.name,date:new Date().toLocaleDateString(),status:'Pending'};
+      const appts = JSON.parse(localStorage.getItem('appointments')) || [];
+      appts.push(appt);
+      localStorage.setItem('appointments',JSON.stringify(appts));
+      showToast('Appointment booked successfully!');
+      renderAppointments();
+    }
+
+    // --- Appointments ---
+    const appointmentsList = document.getElementById('appointmentsList');
+    function renderAppointments(){
+      appointmentsList.innerHTML='';
+      const appts = JSON.parse(localStorage.getItem('appointments')) || [];
+      if(appts.length===0){ appointmentsList.innerHTML='<p>No appointments yet.</p>'; return; }
+      appts.forEach(a=>{
+        const div = document.createElement('div');
+        div.className='card';
+        div.innerHTML=`
+          <h4>${a.doctor}</h4>
+          <p>Date: ${a.date}</p>
+          <p>Status: ${a.status}</p>
+        `;
+        appointmentsList.appendChild(div);
+      });
+    }
+    renderAppointments();
+
+    // --- Medicines ---
+    const medicineList = document.getElementById('medicineList');
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+    function renderMedicines(filter=''){
+      medicineList.innerHTML='';
+      medicines.filter(m=>m.name.toLowerCase().includes(filter.toLowerCase())).forEach(m=>{
+        const card = document.createElement('div');
+        card.className='card';
+        card.innerHTML=`
+          <img src="${m.image}" alt="${m.name}" class="medicine-image">
+          <h4>${m.name}</h4>
+          <p>Price: ₹${m.price}</p>
+          <button class="medicine-cart-btn" onclick="addToCart(${m.id})">Add to Cart</button>
+        `;
+        medicineList.appendChild(card);
+      });
+    }
+    renderMedicines();
+    document.getElementById('medicineSearch').addEventListener('input',(e)=>renderMedicines(e.target.value));
+
+    function addToCart(medId){
+      const med = medicines.find(m=>m.id===medId);
+      cart.push(med);
+      localStorage.setItem('cart',JSON.stringify(cart));
+      showToast(`${med.name} added to cart`);
+    }
+    document.getElementById('checkoutCart').addEventListener('click',()=>{
+      if(cart.length===0){ showToast('Cart is empty'); return; }
+      cart=[]; localStorage.setItem('cart',JSON.stringify(cart));
+      showToast('Checkout successful!');
+    });
+
+    // --- Modals & Toasts ---
+    const modalArea = document.getElementById('modalArea');
+    const toastArea = document.getElementById('toastArea');
+    function showModal(title,msg){
+      modalArea.innerHTML=`
+        <div class="modal-bg" onclick="closeModal()">
+          <div class="modal" onclick="event.stopPropagation()">
+            <h2>${title}</h2>
+            <p>${msg}</p>
+            <button class="close-btn" onclick="closeModal()">Close</button>
+          </div>
+        </div>`;
+    }
+    function closeModal(){ modalArea.innerHTML=''; }
+    function showToast(msg){
+      const t = document.createElement('div'); t.className='toast'; t.textContent=msg;
+      toastArea.appendChild(t);
+      setTimeout(()=>t.remove(),3000);
+    }
+
+    // --- Account Info ---
+    const accountInfo = document.getElementById('accountInfo');
+    function renderAccount(){
+      accountInfo.innerHTML='';
+      if(currentUser){
+        accountInfo.innerHTML=`<p>Logged in as: ${currentUser}</p>
+        <button class="checkout-btn" onclick="logout()">Logout</button>`;
+      } else {
+        accountInfo.innerHTML=`<button class="checkout-btn" onclick="loginPrompt()">Login</button>`;
+      }
+    }
+    function loginPrompt(){
+      const name = prompt('Enter your name to login:');
+      if(name){ currentUser=name; localStorage.setItem('currentUser',JSON.stringify(name)); updateGreeting(); renderAccount(); showToast('Logged in successfully'); }
+    }
+    function logout(){
+      currentUser=null; localStorage.removeItem('currentUser'); updateGreeting(); renderAccount(); showToast('Logged out successfully'); 
+    }
+    renderAccount();
+  </script>
+</body>
+</html>
+
